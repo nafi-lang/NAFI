@@ -1,0 +1,6 @@
+# Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
+# Reference: https://www.jetbrains.com/help/idea/creating-and-managing-projects.html#share-project-through-vcs
+/workspace.xml
+/usage.statistics.xml
+/tasks.xml
+/shelf

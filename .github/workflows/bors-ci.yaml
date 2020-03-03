@@ -1,0 +1,90 @@
+# Heavily inspired by the rust-analyzer CI configuration
+
+name: CI
+
+on:
+  push:
+    branches:
+      - staging
+      - trying
+
+env:
+  CARGO_INCREMENTAL: 0
+
+jobs:
+
+  tests:
+    name: Tests
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v1
+
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: beta
+          profile: minimal
+          override: true
+
+      - name: Cache target
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: ${{ runner.os }}-tests-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Compile
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --workspace --all-targets --locked --no-run
+
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --workspace --all-targets --frozen --no-fail-fast
+
+      - name: Prepare cache
+        uses: actions-rs/cargo@v1
+        with:
+          command: xtask
+          args: clean
+
+      - name: (Windows) Prepare cache
+        if: matrix.os == 'windows-latest'
+        run: Remove-Item ./target/debug/xtask.exe, ./target/release/xtask.exe -ErrorAction Ignore
+
+  style:
+    name: Style
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v1
+
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: beta-2020-02-29
+          profile: minimal
+          override: true
+          components: clippy, rustfmt
+
+      - name: Check formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+      - name: Check warnings
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --workspace --all-targets --locked -- -D warnings

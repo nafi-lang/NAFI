@@ -1,0 +1,9 @@
+cut-body-after = "---"
+delete-merged-branches = true
+
+status = [
+    "Tests (ubuntu-latest)",
+    "Tests (windows-latest)",
+    "Tests (macos-latest)",
+    "Style",
+]

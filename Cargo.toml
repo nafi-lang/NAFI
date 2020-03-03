@@ -1,0 +1,15 @@
+[workspace]
+default-members = [".", "xtask"]
+members = [
+    ".",
+    "xtask",
+]
+
+[package]
+name = "nafi"
+version = "0.0.0-dev"
+edition = "2018"
+
+authors = ["Christopher Durham (CAD97) <cad97@cad97.com>"]
+
+[dependencies]
