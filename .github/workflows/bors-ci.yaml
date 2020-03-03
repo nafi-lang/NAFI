@@ -25,8 +25,8 @@ jobs:
         uses: actions/checkout@v1
 
       - name: Install toolchain
-        id: toolchain
         uses: actions-rs/toolchain@v1
+        id: toolchain
         with:
           toolchain: beta
           profile: minimal
@@ -36,7 +36,7 @@ jobs:
         uses: actions/cache@v1
         with:
           path: target
-          key: ${{ runner.os }}-${{ steps.toolchain.outputs.rustc_hash }}-tests-target-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-tests-${{ steps.toolchain.outputs.rustc_hash }}-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Compile
         uses: actions-rs/cargo@v1
@@ -70,6 +70,7 @@ jobs:
 
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
+        id: toolchain
         with:
           toolchain: beta-2020-02-29
           profile: minimal
@@ -80,7 +81,7 @@ jobs:
         uses: actions/cache@v1
         with:
           path: target
-          key: ${{ runner.os }}-style-target-${{ hashFiles('**/Cargo.lock') }}
+          key: style-${{ steps.toolchain.outputs.rustc_hash }}-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Check formatting
         uses: actions-rs/cargo@v1
@@ -100,32 +101,3 @@ jobs:
         with:
           command: xtask
           args: clean
-
-      - name: (Windows) Prepare cache
-        if: matrix.os == 'windows-latest'
-        run: Remove-Item ./target/debug/xtask.exe, ./target/debug/deps/xtask.exe -ErrorAction Ignore
-
-  coverage:
-    name: Coverage
-    runs-on: ubuntu-latest
-    steps:
-
-      - name: Checkout repository
-        uses: actions/checkout@v1
-
-      - name: Install toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-
-      - name: Run Tarpaulin
-        uses: actions-rs/tarpaulin@v0.1
-        with:
-          version: 0.11.0
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}

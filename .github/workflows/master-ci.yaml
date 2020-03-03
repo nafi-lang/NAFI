@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - staging
+      - trying
+
+env:
+  CARGO_INCREMENTAL: 0
+
+jobs:
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v1
+
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        id: toolchain
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Cache target
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: coverage-${{ steps.toolchain.outputs.rustc_hash }}-target-${{ hashFiles('**/Cargo.lock') }}
+          # This could maybe share a cache with the regular test run? I don't know if tarpaulin requires recompile
+
+      - name: Compile
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          version: 0.11.0
+          args: --workspace --locked --no-run
+
+      - name: Compile
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          version: 0.11.0
+          args: --workspace --frozen --count
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Prepare cache
+        uses: actions-rs/cargo@v1
+        with:
+          command: xtask
+          args: clean
