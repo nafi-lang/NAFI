@@ -11,4 +11,13 @@ The two distinguishing features of xtask are:
 
 ## Our tasks
 
+```man
+cargo xtask
+Run custom build command.
 
+USAGE:
+  cargo xtask <command>
+
+COMMANDS:
+  clean                      Clean $CARGO_TARGET of workspace-local artifacts
+```

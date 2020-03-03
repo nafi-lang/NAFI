@@ -19,7 +19,7 @@ USAGE:
     cargo xtask <command>
 
 COMMANDS:
-    clean                              Clean target directory of workspace-local artifacts
+  clean                      Clean $CARGO_TARGET of workspace-local artifacts
 "
             );
             Ok(())
