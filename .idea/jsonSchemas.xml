@@ -30,6 +30,9 @@
                   <Item>
                     <option name="path" value=".github/workflows/bors-ci.yaml" />
                   </Item>
+                  <Item>
+                    <option name="path" value=".github/workflows/master-ci.yaml" />
+                  </Item>
                 </list>
               </option>
             </SchemaInfo>
