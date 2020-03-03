@@ -84,6 +84,7 @@ jobs:
           args: --all -- --check
 
       - name: Check warnings
+        if: "!cancelled()"
         uses: actions-rs/cargo@v1
         with:
           command: clippy
