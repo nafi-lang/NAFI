@@ -6,4 +6,5 @@ status = [
     "Tests (windows-latest)",
     "Tests (macos-latest)",
     "Style",
+    "Coverage",
 ]
