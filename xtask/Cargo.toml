@@ -1,7 +1,8 @@
 [package]
 name = "xtask"
-version = "0.1.0"
+version = "0.0.0-dev"
 edition = "2018"
+publish = false
 
 authors = ["Christopher Durham (CAD97) <cad97@cad97.com>"]
 
