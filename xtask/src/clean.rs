@@ -7,7 +7,7 @@ pub fn run() -> Result<()> {
         if entry.file_type().is_file() {
             // But cannot delete self on Windows
             let path = entry.path();
-            if !path.ends_with("xtask.exe") {
+            if cfg!(not(windows)) || !path.ends_with("xtask.exe") {
                 fs::remove(path)?;
             }
         }
@@ -21,7 +21,7 @@ pub fn run() -> Result<()> {
         let disp = path.display().to_string();
         if to_delete.iter().any(|d| disp.contains(d)) {
             // But cannot delete self on Windows
-            if !path.ends_with("xtask.exe") {
+            if cfg!(not(windows)) || !path.ends_with("xtask.exe") {
                 fs::remove(path)?;
             }
         }
