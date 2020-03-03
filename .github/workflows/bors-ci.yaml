@@ -77,6 +77,12 @@ jobs:
           override: true
           components: clippy, rustfmt
 
+      - name: Cache target
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: ${{ runner.os }}-style-target-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Check formatting
         uses: actions-rs/cargo@v1
         with:
@@ -84,7 +90,18 @@ jobs:
           args: --all -- --check
 
       - name: Check warnings
+        if: "!cancelled()"
         uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: --workspace --all-targets --locked -- -D warnings
+
+      - name: Prepare cache
+        uses: actions-rs/cargo@v1
+        with:
+          command: xtask
+          args: clean
+
+      - name: (Windows) Prepare cache
+        if: matrix.os == 'windows-latest'
+        run: Remove-Item ./target/debug/xtask.exe, ./target/release/xtask.exe -ErrorAction Ignore
