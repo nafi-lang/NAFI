@@ -10,7 +10,8 @@ fn main() -> Result<()> {
             clean::run()
         }
         _ => {
-            eprint!("\
+            eprint!(
+                "\
 cargo xtask
 Run custom build command.
 
@@ -19,7 +20,8 @@ USAGE:
 
 COMMANDS:
     clean                              Clean target directory of workspace-local artifacts
-");
+"
+            );
             Ok(())
         }
     }
