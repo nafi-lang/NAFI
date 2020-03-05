@@ -1,13 +1,9 @@
 # Heavily inspired by the rust-analyzer CI configuration
-# Checks done here should be a strict superset of pr.yaml!
+# Checks done here should be a strict subset of bors.yaml!
 
-name: Bors CI
+name: PR CI
 
-on:
-  push:
-    branches:
-      - staging
-      - trying
+on: pull_request
 
 env:
   CARGO_INCREMENTAL: 0
@@ -15,12 +11,8 @@ env:
 jobs:
 
   tests:
-    name: Full Tests
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
+    name: Thin Tests
+    runs-on: ubuntu-latest
     steps:
 
       - name: Checkout repository
@@ -37,6 +29,7 @@ jobs:
 
       - name: Cache target
         uses: actions/cache@v1
+        id: cache
         with:
           path: target
           key: ${{ runner.os }}-rustc-${{ steps.toolchain.outputs.rustc_hash }}-target-${{ hashFiles('**/Cargo.lock') }}
@@ -54,19 +47,19 @@ jobs:
           command: test
           args: --workspace --all-targets --frozen --no-fail-fast
 
-      - name: Check formatting
-        if: matrix.os == 'ubuntu-latest' && !cancelled()
+      - name: Check warnings
         uses: actions-rs/cargo@v1
+        if: "!cancelled()"
+        with:
+          command: clippy
+          args: --workspace --all-targets --frozen -- -D warnings
+
+      - name: Check formatting
+        uses: actions-rs/cargo@v1
+        if: "!cancelled()"
         with:
           command: fmt
           args: --all -- --check
-
-      - name: Check warnings
-        if: matrix.os == 'ubuntu-latest' && !cancelled()
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --workspace --all-targets --locked -- -D warnings
 
       - name: Prepare cache
         uses: actions-rs/cargo@v1
@@ -74,7 +67,3 @@ jobs:
         with:
           command: xtask
           args: clean
-
-      - name: (Windows) Prepare cache
-        if: matrix.os == 'windows-latest' && !steps.cache.outputs.cache-hit
-        run: Remove-Item ./target/debug/xtask.exe, ./target/debug/deps/xtask.exe -ErrorAction Ignore

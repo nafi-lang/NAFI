@@ -28,10 +28,16 @@
               <option name="patterns">
                 <list>
                   <Item>
-                    <option name="path" value=".github/workflows/bors-ci.yaml" />
+                    <option name="path" value=".github/workflows/coverage.yaml" />
                   </Item>
                   <Item>
-                    <option name="path" value=".github/workflows/master-ci.yaml" />
+                    <option name="path" value=".github/workflows/audit.yaml" />
+                  </Item>
+                  <Item>
+                    <option name="path" value=".github/workflows/bors.yaml" />
+                  </Item>
+                  <Item>
+                    <option name="path" value=".github/workflows/pr.yaml" />
                   </Item>
                 </list>
               </option>
