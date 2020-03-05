@@ -1,0 +1,38 @@
+name: Audit
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # every day at midnight
+  push:
+    paths:
+      - "**/Cargo.lock"
+
+jobs:
+
+  audit:
+    name: RustSec
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v1
+
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        id: toolchain
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Cache target
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: audit-rustc-${{ steps.toolchain.outputs.rustc_hash }}-target-${{ hashFiles('**/Cargo.lock') }}
+          # This uses a distinct cache key from tests to cache cargo-audit
+
+      - name: Run Audit
+        uses: actions-rs/audit-check@v1
+        with:
+          token: ${{ github.token }}

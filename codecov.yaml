@@ -1,0 +1,18 @@
+codecov:
+  require_ci_to_pass: no
+
+coverage:
+  range: "0...75"
+  round: down
+  recision: 2
+
+  status:
+    project:
+      default:
+        target: auto
+  # Consider splitting status report and gating on component coverage in the future
+  # <https://docs.codecov.io/docs/commit-status#section-splitting-up-projects-example>
+
+comment:
+  behavior: default
+  require_changes: no
