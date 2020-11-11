@@ -9,6 +9,6 @@ authors = ["Christopher Durham (CAD97) <cad97@cad97.com>"]
 # Note: this tree should be as simple as possible so xtask starts up quickly
 [dependencies]
 anyhow = "1.0.34"
-once_cell = "1.5.0"
+once_cell = "1.5.1"
 pico-args = "0.3.4"
 walkdir = "2.3.1"
