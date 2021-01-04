@@ -1,6 +1,10 @@
 use {crate::*, walkdir::WalkDir};
 
-pub fn run() -> Result<()> {
+pub fn run(args: pico_args::Arguments) -> Result<()> {
+    if !args.finish().is_empty() {
+        return Err(anyhow!("Excess arguments to `cargo xtask clean`"));
+    }
+
     // Delete all final artifacts
     for entry in WalkDir::new(TARGET.as_path()).max_depth(2) {
         let entry = entry?;

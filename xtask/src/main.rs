@@ -1,17 +1,6 @@
 use xtask::*;
 
-fn main() -> Result<()> {
-    let mut args = pico_args::Arguments::from_env();
-    let subcommand = args.subcommand()?.unwrap_or_default();
-
-    match subcommand.as_str() {
-        "clean" => {
-            args.finish()?;
-            clean::run()
-        }
-        _ => {
-            eprint!(
-                "\
+const USAGE: &str = "\
 cargo xtask
 Run custom build command.
 
@@ -20,8 +9,16 @@ USAGE:
 
 COMMANDS:
   clean                      Clean $CARGO_TARGET of workspace-local artifacts
-"
-            );
+";
+
+fn main() -> Result<()> {
+    let mut args = pico_args::Arguments::from_env();
+    let subcommand = args.subcommand()?.unwrap_or_default();
+
+    match subcommand.as_str() {
+        "clean" => clean::run(args),
+        _ => {
+            eprint!("{}", USAGE);
             Ok(())
         }
     }
