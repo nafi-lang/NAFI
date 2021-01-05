@@ -1,16 +1,6 @@
 [workspace]
-default-members = [".", "xtask"]
+default-members = ["crates/nafi", "xtask"]
 members = [
-    ".",
+    "crates/*",
     "xtask",
 ]
-
-[package]
-name = "nafi"
-version = "0.0.0-dev"
-edition = "2018"
-publish = false
-
-authors = ["Christopher Durham (CAD97) <cad97@cad97.com>"]
-
-[dependencies]
