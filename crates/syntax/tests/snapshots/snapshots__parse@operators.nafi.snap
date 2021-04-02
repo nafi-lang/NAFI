@@ -1,6 +1,6 @@
 ---
 source: crates/syntax/tests/snapshots.rs
-expression: "SourceFile::parse(&input).syntax_tree()"
+expression: ✎ 1+2*3/4-5
 ---
 SourceFile@0..9
   Expr@0..9

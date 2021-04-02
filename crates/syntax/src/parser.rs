@@ -54,13 +54,17 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn start_node(&mut self, kind: SyntaxKind) {
+    fn start_node_strict(&mut self, kind: SyntaxKind) {
         assert!(
             kind.to_u16() >= SyntaxKind::SourceFile.to_u16(),
             "called start_node with terminal kind"
         );
-        self.bump_trivia();
         self.builder.start_node(NafiLanguage::kind_to_raw(kind))
+    }
+
+    fn start_node(&mut self, kind: SyntaxKind) {
+        self.bump_trivia();
+        self.start_node_strict(kind);
     }
 
     fn bump(&mut self) {
@@ -126,10 +130,17 @@ impl<'a> Parser<'a> {
             tree: self.builder.finish(),
         }
     }
+
+    #[cfg(test)]
+    pub(crate) fn debug_parse(input: &'a str, parse: fn(&mut Self)) -> String {
+        let mut p = Self::new(input);
+        parse(&mut p);
+        format!("{:#?}", crate::SyntaxNode::new_root(p.builder.finish()))
+    }
 }
 
 fn parse_source_file(p: &mut Parser<'_>) {
-    p.start_node(SyntaxKind::SourceFile);
+    p.start_node_strict(SyntaxKind::SourceFile);
     loop {
         match p.peek() {
             None => break,
@@ -138,6 +149,8 @@ fn parse_source_file(p: &mut Parser<'_>) {
             Some(_) => p.bump_node(SyntaxKind::ERROR),
         }
     }
+    p.bump_trivia();
+    assert!(matches!(p.peek(), None));
     p.finish_node();
 }
 
@@ -166,5 +179,37 @@ fn op_binding_power(op: &str) -> (f32, f32) {
         "+" | "-" => (10.0, 11.0),
         "*" | "/" => (20.0, 21.0),
         _ => (f32::NEG_INFINITY, f32::INFINITY),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_expr() {
+        let input = r#"1+2+3+4+5"#;
+        let output = Parser::debug_parse(input, super::parse_expr);
+        let input = String::from("✎ ") + input; // mitsuhiko/insta#177
+        insta::assert_snapshot!(output, &input, @r###"
+        Expr@0..9
+          Expr@0..7
+            Expr@0..5
+              Expr@0..3
+                Expr@0..1
+                  LitDigits@0..1 "1"
+                Syntax@1..2 "+"
+                Expr@2..3
+                  LitDigits@2..3 "2"
+              Syntax@3..4 "+"
+              Expr@4..5
+                LitDigits@4..5 "3"
+            Syntax@5..6 "+"
+            Expr@6..7
+              LitDigits@6..7 "4"
+          Syntax@7..8 "+"
+          Expr@8..9
+            LitDigits@8..9 "5"
+        "###);
     }
 }
