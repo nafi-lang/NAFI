@@ -1,0 +1,6 @@
+---
+source: crates/syntax/tests/snapshots.rs
+expression: "SourceFile::parse(&input).syntax_tree()"
+---
+SourceFile@0..0
+

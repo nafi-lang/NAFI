@@ -6,4 +6,6 @@ publish = false
 
 authors = ["Christopher Durham (CAD97) <cad97@cad97.com>"]
 
-[dependencies]
+[dependencies.syntax]
+package = "nafi-syntax"
+path = "../syntax"

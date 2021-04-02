@@ -1,0 +1,35 @@
+[package]
+name = "nafi-syntax"
+version = "0.0.0-dev"
+edition = "2018"
+publish = false
+
+authors = ["Christopher Durham (CAD97) <cad97@cad97.com>"]
+
+
+[dependencies.logos]
+package = "logos"
+version = "0.12.0"
+
+[dependencies.num-derive]
+package = "num-derive"
+version = "0.3.3"
+
+[dependencies.num-traits]
+package = "num-traits"
+version = "0.2.14"
+
+[dependencies.rowan]
+package = "rowan"
+version = "0.12.6"
+
+[dependencies.serde]
+package = "serde"
+version = "1.0.125"
+features = ["derive"]
+
+
+[dev-dependencies.insta]
+package = "insta"
+version = "1.7.1"
+features = ["glob"]

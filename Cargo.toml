@@ -1,5 +1,5 @@
 [workspace]
-default-members = ["crates/nafi", "xtask"]
+default-members = ["crates/*"]
 members = [
     "crates/*",
     "xtask",
