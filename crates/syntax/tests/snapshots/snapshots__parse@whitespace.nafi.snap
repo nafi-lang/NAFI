@@ -1,7 +1,7 @@
 ---
 source: crates/syntax/tests/snapshots.rs
-expression: "✎  \n"
+expression: "✎    \t      \t \n   \t\t\t \t\t   \t\t  \t \n    \n\t\t    \t  \t   \n\t\n     \t\t  \t \t\n\t\n     \t\t \t\t  \n \n \t\n  \t\n     \t\t \t\t\t\t\n\t\n     \t     \n\t\n     \t \t \t\t\t\n\t\n     \t\t \t\t\t\t\n\t\n     \t\t\t  \t \n\t\n     \t\t \t\t  \n\t\n     \t\t  \t  \n\t\n     \t    \t\n\t\n     \t \t \n\t\n   \n\n\n\n"
 ---
-SourceFile@0..2
-  Whitespace@0..2 " \n"
+SourceFile@0..227
+  Whitespace@0..227 "   \t      \t \n   \t\t\t \t ..."
 

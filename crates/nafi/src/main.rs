@@ -2,7 +2,7 @@ use std::writeln;
 
 use {
     std::io::{self, prelude::*},
-    syntax::SourceFile,
+    syntax::node::SourceFile,
 };
 
 fn main() -> io::Result<()> {
@@ -20,7 +20,7 @@ fn main() -> io::Result<()> {
         let source = input.replace("\r\n", "\n");
         if let Some(source) = source.strip_suffix('\n') {
             let parse = SourceFile::parse(source);
-            writeln!(stdout, "{:#?}", parse.syntax_tree())?;
+            writeln!(stdout, "{:#?}", parse.syntax())?;
         } else {
             break;
         }

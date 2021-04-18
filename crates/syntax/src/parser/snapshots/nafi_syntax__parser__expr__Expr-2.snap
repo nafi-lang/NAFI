@@ -1,0 +1,15 @@
+---
+source: crates/syntax/src/parser/expr.rs
+expression: ✎ ｢Expr｣*｢Expr｣+｢Expr｣*｢Expr｣
+---
+Expr@0..43
+  Expr@0..21
+    Expr@0..10 "｢Expr｣"
+    Syntax@10..11 "*"
+    Expr@11..21 "｢Expr｣"
+  Syntax@21..22 "+"
+  Expr@22..43
+    Expr@22..32 "｢Expr｣"
+    Syntax@32..33 "*"
+    Expr@33..43 "｢Expr｣"
+

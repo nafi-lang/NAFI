@@ -1,43 +1,76 @@
 use {
-    crate::{Lexer, NafiLanguage, SourceFile, TokenKind},
-    num_derive::{FromPrimitive, ToPrimitive},
-    num_traits::{FromPrimitive, ToPrimitive},
+    crate::{AstKind, AstNode, Lexer, NafiLanguage, SyntaxKind, SyntaxNode},
+    num_traits::ToPrimitive,
     rowan::{GreenNodeBuilder, Language as _},
-    serde::{Deserialize, Serialize},
+    std::marker::PhantomData,
 };
 
-#[repr(u16)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize, FromPrimitive, ToPrimitive)]
-pub enum SyntaxKind {
-    #[allow(clippy::upper_case_acronyms)]
-    ERROR = u16::MAX,
-
-    // terminals
-    Whitespace = 0,
-    Identifier,
-    LitDigits,
-    Syntax,
-
-    // nonterminals
-    SourceFile,
-    Expr,
+#[cfg(test)]
+macro_rules! test {
+    ( $Node:ident: $($input:expr),* $(,)? ) => {
+        ::paste::paste! {
+            #[test]
+            #[allow(non_snake_case)]
+            fn [< test_ $Node >]() {
+                $({
+                    let input: &str = $input;
+                    let output = format!("{:#?}", $Node::parse(input).syntax());
+                    let input = String::from("✎ ") + $input; // mitsuhiko/insta#177
+                    insta::assert_snapshot!(insta::internals::AutoName, output, &input);
+                })*
+            }
+        }
+    };
+}
+#[cfg(not(test))]
+macro_rules! test {
+    ($($tt:tt)*) => {};
 }
 
-impl From<TokenKind> for SyntaxKind {
-    fn from(kind: TokenKind) -> Self {
-        kind.to_u16().and_then(SyntaxKind::from_u16).unwrap()
-    }
+macro_rules! parse {
+    ( $Node:ident: $parse:expr ) => {
+        use crate::{ParseAst, Parser, SyntaxKind};
+        impl ParseAst for $Node {
+            fn parse_with(p: &mut Parser<'_>) {
+                if p.peek() == Some(SyntaxKind::$Node) {
+                    p.bump()
+                } else {
+                    $parse(p)
+                }
+            }
+        }
+    };
+    ( $Node:ident!: $parse:expr ) => {
+        use crate::{ParseAst, Parser, SyntaxKind};
+        impl ParseAst for $Node {
+            fn parse_with(p: &mut Parser<'_>) {
+                $parse(p)
+            }
+        }
+    };
 }
 
-pub(crate) struct Parser<'a> {
+mod expr;
+mod source_file;
+
+pub struct Parser<'a> {
     lexer: Lexer<'a>,
     builder: GreenNodeBuilder<'static>,
-    trivia: Vec<(TokenKind, &'a str)>,
+    trivia: Vec<(SyntaxKind, &'a str)>,
+}
+
+pub trait ParseAst {
+    fn parse_with(p: &mut Parser<'_>);
+}
+
+#[derive(Clone)]
+pub struct ParseResult<Kind: AstKind> {
+    green: rowan::GreenNode,
+    tag: PhantomData<Kind>,
 }
 
 impl<'a> Parser<'a> {
-    pub(crate) fn new(input: &'a str) -> Self {
+    pub fn new(input: &'a str) -> Self {
         Self {
             lexer: Lexer::new(input),
             builder: GreenNodeBuilder::new(),
@@ -45,12 +78,30 @@ impl<'a> Parser<'a> {
         }
     }
 
+    pub fn parse<Kind: AstKind>(mut self) -> ParseResult<Kind> {
+        Kind::parse_with(&mut self);
+        ParseResult {
+            green: self.builder.finish(),
+            tag: PhantomData,
+        }
+    }
+}
+
+impl<Kind: AstKind> ParseResult<Kind> {
+    pub fn syntax(self) -> AstNode<Kind> {
+        AstNode {
+            syntax: SyntaxNode::new_root(self.green),
+            tag: self.tag,
+        }
+    }
+}
+
+impl<'a> Parser<'a> {
     // #Todo: figure out a principled way of attaching trivia meaningfully
     fn bump_trivia(&mut self) {
         self.peek(); // eat ws into buffer
         for (kind, src) in self.trivia.drain(..) {
-            self.builder
-                .token(NafiLanguage::kind_to_raw(kind.into()), src);
+            self.builder.token(NafiLanguage::kind_to_raw(kind), src);
         }
     }
 
@@ -70,8 +121,7 @@ impl<'a> Parser<'a> {
     fn bump(&mut self) {
         self.bump_trivia();
         let (kind, src) = self.lexer.next().expect("called bump on exhausted parser");
-        self.builder
-            .token(NafiLanguage::kind_to_raw(kind.into()), src);
+        self.builder.token(NafiLanguage::kind_to_raw(kind), src);
     }
 
     fn finish_node(&mut self) {
@@ -103,7 +153,7 @@ impl<'a> Parser<'a> {
         self.finish_node();
     }
 
-    fn peek(&mut self) -> Option<TokenKind> {
+    fn peek(&mut self) -> Option<SyntaxKind> {
         self.peek_full().map(|(kind, _src)| kind)
     }
 
@@ -111,7 +161,7 @@ impl<'a> Parser<'a> {
         self.peek_full().map(|(_kind, src)| src)
     }
 
-    fn peek_full(&mut self) -> Option<(TokenKind, &'a str)> {
+    fn peek_full(&mut self) -> Option<(SyntaxKind, &'a str)> {
         while self
             .lexer
             .peek()
@@ -121,85 +171,5 @@ impl<'a> Parser<'a> {
             self.trivia.push(self.lexer.next().unwrap());
         }
         self.lexer.peek()
-    }
-
-    pub(crate) fn parse(mut self) -> SourceFile {
-        parse_source_file(&mut self);
-
-        SourceFile {
-            tree: self.builder.finish(),
-        }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn debug_parse(input: &'a str, parse: fn(&mut Self)) -> String {
-        let mut p = Self::new(input);
-        parse(&mut p);
-        format!("{:#?}", crate::SyntaxNode::new_root(p.builder.finish()))
-    }
-}
-
-#[cfg(test)]
-macro_rules! test {
-    ( $grammar:ident: $($input:expr),* $(,)? ) => {
-        ::paste::paste! {
-            #[test]
-            fn [< test_ $grammar >]() {
-                $({
-                    let input: &str = $input;
-                    let output = Parser::debug_parse(input, self::$grammar);
-                    let input = String::from("✎ ") + $input; // mitsuhiko/insta#177
-                    insta::assert_snapshot!(insta::internals::AutoName, output, &input);
-                })*
-            }
-        }
-    };
-}
-#[cfg(not(test))]
-macro_rules! test {
-    ($($tt:tt)*) => {};
-}
-
-fn parse_source_file(p: &mut Parser<'_>) {
-    p.start_node_strict(SyntaxKind::SourceFile);
-    loop {
-        match p.peek() {
-            None => break,
-            Some(TokenKind::LitDigits) | Some(TokenKind::Identifier) => parse_expr(p),
-            Some(TokenKind::ERROR) => p.bump(),
-            Some(_) => p.bump_node(SyntaxKind::ERROR),
-        }
-    }
-    p.bump_trivia();
-    assert!(matches!(p.peek(), None));
-    p.finish_node();
-}
-
-test!(parse_expr: "1+2+3+4", "1+2*3+4", "1*2+3*4");
-fn parse_expr(p: &mut Parser<'_>) {
-    parse_expr_(p, f32::NEG_INFINITY)
-}
-
-fn parse_expr_(p: &mut Parser<'_>, current_binding_power: f32) {
-    let checkpoint = p.checkpoint();
-
-    p.bump_node(SyntaxKind::Expr);
-
-    while let Some(TokenKind::Syntax) = p.peek() {
-        let (left_power, right_power) = op_binding_power(p.peek_src().unwrap());
-        if left_power < current_binding_power {
-            break;
-        }
-        p.bump();
-        parse_expr_(p, right_power);
-        p.wrap_node_from(checkpoint, SyntaxKind::Expr);
-    }
-}
-
-fn op_binding_power(op: &str) -> (f32, f32) {
-    match op {
-        "+" | "-" => (10.0, 11.0),
-        "*" | "/" => (20.0, 21.0),
-        _ => (f32::NEG_INFINITY, f32::INFINITY),
     }
 }

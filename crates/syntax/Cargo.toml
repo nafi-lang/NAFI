@@ -19,10 +19,6 @@ version = "0.3.3"
 package = "num-traits"
 version = "0.2.14"
 
-[dependencies.paste]
-package = "paste"
-version = "1.0.5"
-
 [dependencies.rowan]
 package = "rowan"
 version = "0.12.6"
@@ -37,3 +33,7 @@ features = ["derive"]
 package = "insta"
 version = "1.7.1"
 features = ["glob"]
+
+[dev-dependencies.paste]
+package = "paste"
+version = "1.0.5"
