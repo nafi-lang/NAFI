@@ -139,6 +139,27 @@ impl<'a> Parser<'a> {
     }
 }
 
+#[cfg(test)]
+macro_rules! test {
+    ( $grammar:ident: $($input:expr),* $(,)? ) => {
+        ::paste::paste! {
+            #[test]
+            fn [< test_ $grammar >]() {
+                $({
+                    let input: &str = $input;
+                    let output = Parser::debug_parse(input, self::$grammar);
+                    let input = String::from("✎ ") + $input; // mitsuhiko/insta#177
+                    insta::assert_snapshot!(insta::internals::AutoName, output, &input);
+                })*
+            }
+        }
+    };
+}
+#[cfg(not(test))]
+macro_rules! test {
+    ($($tt:tt)*) => {};
+}
+
 fn parse_source_file(p: &mut Parser<'_>) {
     p.start_node_strict(SyntaxKind::SourceFile);
     loop {
@@ -154,6 +175,7 @@ fn parse_source_file(p: &mut Parser<'_>) {
     p.finish_node();
 }
 
+test!(parse_expr: "1+2+3+4", "1+2*3+4", "1*2+3*4");
 fn parse_expr(p: &mut Parser<'_>) {
     parse_expr_(p, f32::NEG_INFINITY)
 }
@@ -179,37 +201,5 @@ fn op_binding_power(op: &str) -> (f32, f32) {
         "+" | "-" => (10.0, 11.0),
         "*" | "/" => (20.0, 21.0),
         _ => (f32::NEG_INFINITY, f32::INFINITY),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn parse_expr() {
-        let input = r#"1+2+3+4+5"#;
-        let output = Parser::debug_parse(input, super::parse_expr);
-        let input = String::from("✎ ") + input; // mitsuhiko/insta#177
-        insta::assert_snapshot!(output, &input, @r###"
-        Expr@0..9
-          Expr@0..7
-            Expr@0..5
-              Expr@0..3
-                Expr@0..1
-                  LitDigits@0..1 "1"
-                Syntax@1..2 "+"
-                Expr@2..3
-                  LitDigits@2..3 "2"
-              Syntax@3..4 "+"
-              Expr@4..5
-                LitDigits@4..5 "3"
-            Syntax@5..6 "+"
-            Expr@6..7
-              LitDigits@6..7 "4"
-          Syntax@7..8 "+"
-          Expr@8..9
-            LitDigits@8..9 "5"
-        "###);
     }
 }
