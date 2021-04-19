@@ -1,53 +1,75 @@
-use crate::*;
+use {
+    crate::*,
+    std::{
+        fs::FileType,
+        path::{Path, PathBuf},
+    },
+};
 
-pub fn run() -> Result<()> {
-    #![allow(clippy::needless_collect)] // rust-lang/rust-clippy#6164
+impl flags::Clean {
+    pub fn run(self) -> Result<()> {
+        #![allow(clippy::needless_collect)] // rust-lang/rust-clippy#6164
 
-    // Delete all final artifacts
-    for path in fs::read_dir(TARGET.join("debug"), fs::FileType::is_file)? {
-        // But cannot delete self on Windows
-        if cfg!(not(windows)) || !path.ends_with("xtask.exe") {
-            fs::remove(path)?;
-        }
-    }
-
-    // Delete intermediate artifacts for workspace-local crates
-    let to_delete = fs::read_dir("./crates", fs::FileType::is_dir)?
-        .into_iter()
-        .map(|path| {
-            path.file_name()
-                .unwrap()
-                .to_string_lossy()
-                .replace("-", "_")
-        })
-        .chain(Some("xtask".into()))
-        .collect::<Vec<_>>();
-
-    for &target_subdir in ["debug/deps", "debug/.fingerprint"].iter() {
-        for path in fs::read_dir(TARGET.join(target_subdir), |_| true)? {
+        // Delete all final artifacts
+        for path in read_dir(TARGET_DIR.join("debug"), FileType::is_file)? {
             // But cannot delete self on Windows
-            if cfg!(windows) && path.ends_with("xtask.exe") {
-                continue;
+            if cfg!(not(windows)) || !path.ends_with("xtask.exe") {
+                xshell::rm_rf(path)?;
             }
+        }
 
-            let fname = path.file_name().unwrap().to_string_lossy();
-            // Strip hash disambiguator
-            match rsplit_one(&fname, '-') {
-                (Some(stem), _) => {
-                    let stem = stem.replace('-', "_");
-                    // Delete if local
-                    if to_delete.contains(&stem) {
-                        fs::remove(path)?;
+        // Delete intermediate artifacts for workspace-local crates
+        let to_delete = read_dir(WORKSPACE_DIR.join("crates"), FileType::is_dir)?
+            .into_iter()
+            .map(|path| {
+                path.file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .replace("-", "_")
+            })
+            .chain(Some("xtask".into()))
+            .collect::<Vec<_>>();
+
+        for &target_subdir in ["debug/deps", "debug/.fingerprint"].iter() {
+            for path in xshell::read_dir(TARGET_DIR.join(target_subdir))? {
+                // But cannot delete self on Windows
+                if cfg!(windows) && path.ends_with("xtask.exe") {
+                    continue;
+                }
+
+                let fname = path.file_name().unwrap().to_string_lossy();
+                // Strip hash disambiguator
+                match rsplit_one(&fname, '-') {
+                    (Some(stem), _) => {
+                        let stem = stem.replace('-', "_");
+                        // Delete if local
+                        if to_delete.contains(&stem) {
+                            xshell::rm_rf(path)?;
+                        }
+                    }
+                    (None, _) => {
+                        xshell::rm_rf(path)?;
                     }
                 }
-                (None, _) => {
-                    fs::remove(path)?;
-                }
             }
         }
+
+        Ok(())
+    }
+}
+
+fn read_dir(path: impl AsRef<Path>, cond: impl Fn(&FileType) -> bool) -> Result<Vec<PathBuf>> {
+    fn _impl(path: &Path, cond: &dyn Fn(&FileType) -> bool) -> Result<Vec<PathBuf>> {
+        let mut res = vec![];
+        for entry in path.read_dir()?.flatten() {
+            if cond(&entry.file_type()?) {
+                res.push(entry.path());
+            }
+        }
+        Ok(res)
     }
 
-    Ok(())
+    _impl(path.as_ref(), &cond)
 }
 
 fn rsplit_one(s: &str, pat: char) -> (Option<&str>, &str) {
