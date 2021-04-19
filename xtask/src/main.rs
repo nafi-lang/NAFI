@@ -12,5 +12,6 @@ fn main() -> Result<()> {
     match flags.subcommand {
         flags::XtaskCmd::Help(cmd) => cmd.run(),
         flags::XtaskCmd::Clean(cmd) => cmd.run(),
+        flags::XtaskCmd::Codegen(cmd) => cmd.run(),
     }
 }

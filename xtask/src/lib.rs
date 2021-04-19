@@ -3,6 +3,7 @@ pub use anyhow::{anyhow, bail, Result};
 pub mod flags;
 
 mod clean;
+mod codegen;
 mod help;
 
 use once_cell::sync::Lazy;

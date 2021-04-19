@@ -1,0 +1,56 @@
+// Nafi Un-Grammar.
+//
+// This grammar specifies the structure of Nafi's concrete syntax tree.
+// It does not specify parsing rules (ambiguities, precedence, etc are out of scope).
+// Tokens are processed -- contextual keywords are recognised, operators glued.
+// <https://rust-analyzer.github.io/blog/2020/10/24/introducing-ungrammar.html>
+//
+// Legend:
+//
+//   //          -- comment
+//   Name =      -- non-terminal definition
+//   'ident'     -- token (terminal)
+//   A B         -- sequence
+//   A | B       -- alternation
+//   A*          -- zero or more repetition
+//   A?          -- zero or one repetition
+//   (A)         -- same as A
+//   label:A     -- suggested name for field of AST node
+
+//*************************//
+//     Quasi-Terminals     //
+//*************************//
+
+Op = 'syntax'+
+
+
+//*************************//
+//          Items          //
+//*************************//
+
+SourceFile =
+  Expr
+
+//*************************//
+//       Expressions       //
+//*************************//
+
+Expr =
+  InfixExpr
+| LiteralExpr
+| PrefixExpr
+
+InfixEpxr =
+  lhs:Expr
+  op:Op
+  rhs:Expr
+
+PrefixExpr =
+  op:Op
+  rhs:Expr
+
+Literal =
+  value:(
+    'integer'
+  | 'float'
+  )

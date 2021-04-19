@@ -10,6 +10,14 @@ xflags::xflags! {
 
         /// Clean $CARGO_TARGET of workspace-local artifacts
         cmd clean {}
+
+        /// Regenerate nuts & bolts of generated code (automatically done by `cargo test`)
+        cmd codegen {
+            /// Regenerate syntax types (ast, etc)
+            optional -s, --syntax
+            /// Regenerate all generated code
+            optional -a, --all
+        }
     }
 }
 
@@ -25,6 +33,7 @@ pub struct Xtask {
 pub enum XtaskCmd {
     Help(Help),
     Clean(Clean),
+    Codegen(Codegen),
 }
 
 #[derive(Debug)]
@@ -34,6 +43,12 @@ pub struct Help {
 
 #[derive(Debug)]
 pub struct Clean;
+
+#[derive(Debug)]
+pub struct Codegen {
+    pub syntax: bool,
+    pub all: bool,
+}
 
 impl Xtask {
     pub const HELP: &'static str = Self::HELP_;

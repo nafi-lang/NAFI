@@ -1,9 +1,7 @@
 use {
     crate::*,
-    std::{
-        fs::FileType,
-        path::{Path, PathBuf},
-    },
+    std::path::{Path, PathBuf},
+    xshell::{read_dir, rm_rf},
 };
 
 impl flags::Clean {
@@ -11,15 +9,15 @@ impl flags::Clean {
         #![allow(clippy::needless_collect)] // rust-lang/rust-clippy#6164
 
         // Delete all final artifacts
-        for path in read_dir(TARGET_DIR.join("debug"), FileType::is_file)? {
+        for path in read_dir_files(TARGET_DIR.join("debug"))? {
             // But cannot delete self on Windows
             if cfg!(not(windows)) || !path.ends_with("xtask.exe") {
-                xshell::rm_rf(path)?;
+                rm_rf(path)?;
             }
         }
 
         // Delete intermediate artifacts for workspace-local crates
-        let to_delete = read_dir(WORKSPACE_DIR.join("crates"), FileType::is_dir)?
+        let to_delete = read_dir_files(WORKSPACE_DIR.join("crates"))?
             .into_iter()
             .map(|path| {
                 path.file_name()
@@ -31,7 +29,7 @@ impl flags::Clean {
             .collect::<Vec<_>>();
 
         for &target_subdir in ["debug/deps", "debug/.fingerprint"].iter() {
-            for path in xshell::read_dir(TARGET_DIR.join(target_subdir))? {
+            for path in read_dir(TARGET_DIR.join(target_subdir))? {
                 // But cannot delete self on Windows
                 if cfg!(windows) && path.ends_with("xtask.exe") {
                     continue;
@@ -44,11 +42,11 @@ impl flags::Clean {
                         let stem = stem.replace('-', "_");
                         // Delete if local
                         if to_delete.contains(&stem) {
-                            xshell::rm_rf(path)?;
+                            rm_rf(path)?;
                         }
                     }
                     (None, _) => {
-                        xshell::rm_rf(path)?;
+                        rm_rf(path)?;
                     }
                 }
             }
@@ -58,18 +56,18 @@ impl flags::Clean {
     }
 }
 
-fn read_dir(path: impl AsRef<Path>, cond: impl Fn(&FileType) -> bool) -> Result<Vec<PathBuf>> {
-    fn _impl(path: &Path, cond: &dyn Fn(&FileType) -> bool) -> Result<Vec<PathBuf>> {
+fn read_dir_files(path: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
+    fn _impl(path: &Path) -> Result<Vec<PathBuf>> {
         let mut res = vec![];
         for entry in path.read_dir()?.flatten() {
-            if cond(&entry.file_type()?) {
+            if entry.file_type()?.is_file() {
                 res.push(entry.path());
             }
         }
         Ok(res)
     }
 
-    _impl(path.as_ref(), &cond)
+    _impl(path.as_ref())
 }
 
 fn rsplit_one(s: &str, pat: char) -> (Option<&str>, &str) {
