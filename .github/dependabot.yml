@@ -1,0 +1,15 @@
+version: 2
+updates:
+- package-ecosystem: cargo
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "07:00"
+  open-pull-requests-limit: 10
+  labels:
+  - "type: chore"
+  ignore:
+  - dependency-name: once_cell
+    versions:
+    - 1.7.0
+    - 1.7.1
