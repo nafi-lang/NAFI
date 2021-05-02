@@ -1,4 +1,4 @@
-use crate::node::Expr;
+use crate::{Expr, Parser, SyntaxKind};
 
 test!(Expr: "｢Expr｣+｢Expr｣*｢Expr｣+｢Expr｣", "｢Expr｣*｢Expr｣+｢Expr｣*｢Expr｣");
 parse!(Expr!: |p| parse_expr(p, f32::NEG_INFINITY));

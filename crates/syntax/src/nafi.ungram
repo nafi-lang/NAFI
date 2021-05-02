@@ -21,8 +21,12 @@
 //     Quasi-Terminals     //
 //*************************//
 
-Op = 'syntax'+
+Op = 'syntax'*
 
+Number =
+  'digits'
+  ('.' 'digits')?
+  ('e' 'digits')?
 
 //*************************//
 //          Items          //
@@ -36,21 +40,29 @@ SourceFile =
 //*************************//
 
 Expr =
-  InfixExpr
-| LiteralExpr
+  LiteralExpr
+| InfixExpr
 | PrefixExpr
+| SuffixExpr
+| CircumfixExpr
 
-InfixEpxr =
+LiteralExpr =
+  value:Number
+
+InfixExpr =
   lhs:Expr
-  op:Op
+  infix:Op
   rhs:Expr
 
 PrefixExpr =
-  op:Op
+  prefix:Op
   rhs:Expr
 
-Literal =
-  value:(
-    'integer'
-  | 'float'
-  )
+SuffixExpr =
+  lhs:Expr
+  suffix:Op
+
+CircumfixExpr =
+  prefix:Op
+  expr:Expr
+  suffix:Op

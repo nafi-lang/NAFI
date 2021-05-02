@@ -17,6 +17,10 @@ impl<'a> Lexer<'a> {
     pub fn peek(&self) -> Option<<Self as Iterator>::Item> {
         self.next_kind.map(|kind| (kind, self.logos.slice()))
     }
+
+    pub fn source(&self) -> &'a str {
+        self.logos.source()
+    }
 }
 
 impl<'a> Iterator for Lexer<'a> {

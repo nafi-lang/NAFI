@@ -13,6 +13,7 @@ macro_rules! test {
             #[allow(non_snake_case)]
             fn [< test_ $Node >]() {
                 $({
+                    use crate::ParseAst;
                     let input: &str = $input;
                     let output = format!("{:#?}", $Node::parse(input).syntax());
                     let input = String::from("✎ ") + $input; // mitsuhiko/insta#177
@@ -29,10 +30,9 @@ macro_rules! test {
 
 macro_rules! parse {
     ( $Node:ident: $parse:expr ) => {
-        use crate::{ParseAst, Parser, SyntaxKind};
-        impl ParseAst for $Node {
-            fn parse_with(p: &mut Parser<'_>) {
-                if p.peek() == Some(SyntaxKind::$Node) {
+        impl crate::ParseAst for $Node {
+            fn parse_with(p: &mut crate::Parser<'_>) {
+                if p.peek() == Some(crate::SyntaxKind::$Node) {
                     p.bump()
                 } else {
                     $parse(p)
@@ -41,9 +41,8 @@ macro_rules! parse {
         }
     };
     ( $Node:ident!: $parse:expr ) => {
-        use crate::{ParseAst, Parser, SyntaxKind};
-        impl ParseAst for $Node {
-            fn parse_with(p: &mut Parser<'_>) {
+        impl crate::ParseAst for $Node {
+            fn parse_with(p: &mut crate::Parser<'_>) {
                 $parse(p)
             }
         }
@@ -51,6 +50,7 @@ macro_rules! parse {
 }
 
 mod expr;
+mod fused_terminal;
 mod source_file;
 
 pub struct Parser<'a> {
@@ -61,10 +61,13 @@ pub struct Parser<'a> {
 
 pub trait ParseAst {
     fn parse_with(p: &mut Parser<'_>);
+    fn parse(input: &str) -> crate::ParseResult<Self> {
+        crate::Parser::new(input).parse()
+    }
 }
 
 #[derive(Clone)]
-pub struct ParseResult<Kind: AstKind> {
+pub struct ParseResult<Kind: ?Sized> {
     green: rowan::GreenNode,
     tag: PhantomData<Kind>,
 }
@@ -78,8 +81,11 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse<Kind: AstKind>(mut self) -> ParseResult<Kind> {
+    pub fn parse<Kind: ?Sized + ParseAst>(mut self) -> ParseResult<Kind> {
         Kind::parse_with(&mut self);
+        if self.lexer.peek().is_some() {
+            todo!("figure out principled error for not consuming entire input");
+        }
         ParseResult {
             green: self.builder.finish(),
             tag: PhantomData,
@@ -121,6 +127,12 @@ impl<'a> Parser<'a> {
     fn bump(&mut self) {
         self.bump_trivia();
         let (kind, src) = self.lexer.next().expect("called bump on exhausted parser");
+        self.builder.token(NafiLanguage::kind_to_raw(kind), src);
+    }
+
+    fn bump_as(&mut self, kind: SyntaxKind) {
+        self.bump_trivia();
+        let (_, src) = self.lexer.next().expect("called bump on exhausted parser");
         self.builder.token(NafiLanguage::kind_to_raw(kind), src);
     }
 
@@ -171,5 +183,26 @@ impl<'a> Parser<'a> {
             self.trivia.push(self.lexer.next().unwrap());
         }
         self.lexer.peek()
+    }
+
+    fn _fuse(&self, prefix: &str, suffix: &str) -> &str {
+        let source = self.lexer.source();
+
+        assert!((source as *const str as *const u8) < (prefix as *const str as *const u8));
+        assert!((source as *const str as *const u8) < (suffix as *const str as *const u8));
+        assert!(
+            (prefix as *const str as *const u8).wrapping_add(prefix.len())
+                < (source as *const str as *const u8)
+        );
+        assert!(
+            (suffix as *const str as *const u8).wrapping_add(suffix.len())
+                < (source as *const str as *const u8)
+        );
+
+        let start = (prefix as *const str as *const u8 as usize)
+            - (source as *const str as *const u8 as usize);
+        let end = suffix.len() + (suffix as *const str as *const u8 as usize)
+            - (source as *const str as *const u8 as usize);
+        &source[start..end]
     }
 }

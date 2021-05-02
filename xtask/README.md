@@ -13,11 +13,25 @@ The two distinguishing features of xtask are:
 
 ```man
 cargo xtask
-Run custom build command.
+  Run custom build command
 
-USAGE:
-  cargo xtask <command>
+OPTIONS:
+    -h, --help
+      Print help information
 
-COMMANDS:
-  clean                      Clean $CARGO_TARGET of workspace-local artifacts
+SUBCOMANDS:
+
+xtask clean
+  Clean $CARGO_TARGET of workspace-local artifacts
+
+
+xtask codegen
+  Regenerate nuts & bolts of generated code (automatically done by `cargo test`)
+
+  OPTIONS:
+    -s, --syntax
+      Regenerate syntax types (ast, etc)
+
+    -a, --all
+      Regenerate all generated code
 ```

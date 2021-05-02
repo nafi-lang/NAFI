@@ -30,15 +30,35 @@ pub enum SyntaxKind {
     #[regex(r#"[\p{XID_Start}&&(?&allowed_scripts)][\p{XID_Continue}&&(?&allowed_scripts)]*"#)]
     Identifier,
     #[regex(r#"[0-9]+"#)]
-    LitDigits,
+    Digits,
     #[regex(r#"\p{Pattern_Syntax}"#)]
     Syntax,
 
-    // nonterminals // NB: `｢` is _not_ in the lexical grammar, so is a safe debug tool here
+    // NB: `｢` is _not_ in the lexical grammar, so is a safe debug tool here
+
+    // quasi-terminals (i.e. glued by parser, no introspection)
+    #[cfg_attr(test, token("｢Op｣"))]
+    Op,
+    #[cfg_attr(test, token("｢Number｣"))]
+    Number,
+
+    // items
     #[cfg_attr(test, token("｢SourceFile｣"))]
     SourceFile,
+
+    // expressions
     #[cfg_attr(test, token("｢Expr｣"))]
     Expr,
+    #[cfg_attr(test, token("｢LiteralExpr｣"))]
+    LiteralExpr,
+    #[cfg_attr(test, token("｢InfixExpr｣"))]
+    InfixExpr,
+    #[cfg_attr(test, token("｢PrefixExpr｣"))]
+    PrefixExpr,
+    #[cfg_attr(test, token("｢SuffixExpr｣"))]
+    SuffixExpr,
+    #[cfg_attr(test, token("｢CircumfixExpr｣"))]
+    CircumfixExpr,
 }
 
 impl SyntaxKind {

@@ -2,7 +2,7 @@ use std::writeln;
 
 use {
     std::io::{self, prelude::*},
-    syntax::node::SourceFile,
+    syntax::{ParseAst, SourceFile},
 };
 
 fn main() -> io::Result<()> {

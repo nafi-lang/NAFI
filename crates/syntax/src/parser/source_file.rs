@@ -1,4 +1,4 @@
-use crate::node::{Expr, SourceFile};
+use crate::{Expr, ParseAst, Parser, SourceFile, SyntaxKind};
 
 parse!(SourceFile: parse_source_file);
 
@@ -7,7 +7,7 @@ fn parse_source_file(p: &mut Parser<'_>) {
     loop {
         match p.peek() {
             None => break,
-            Some(SyntaxKind::LitDigits) | Some(SyntaxKind::Identifier) => Expr::parse_with(p),
+            Some(SyntaxKind::Digits) | Some(SyntaxKind::Identifier) => Expr::parse_with(p),
             Some(SyntaxKind::ERROR) => p.bump(),
             Some(_) => p.bump_node(SyntaxKind::ERROR),
         }
